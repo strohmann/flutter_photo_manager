@@ -5,7 +5,9 @@ class AssetPathEntity {
   static Future<AssetPathEntity> fromId(String id,
       {FilterOptionGroup filterOption}) async {
     filterOption ??= FilterOptionGroup();
-    final entity = AssetPathEntity()..id = id;
+    var entity = AssetPathEntity(id: id, filterOption: filterOption);
+    entity.type = RequestType.common;
+    entity.albumType = 1;
     await entity.refreshPathProperties();
     return entity;
   }
@@ -232,6 +234,13 @@ class AssetEntity {
   /// When the device is android10 or above, always null.
   set longitude(double longitude) {
     _longitude = longitude;
+  }
+
+  double _altitude;
+  double get altitude => _altitude ?? 0;
+  set altitude(double altitude)
+  {
+    _altitude = altitude;
   }
 
   /// Get latitude and longitude from MediaStore(android) / Photos(iOS).

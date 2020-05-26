@@ -267,6 +267,7 @@
     entity.modifiedDt = modifiedTimeStamp;
     entity.lat = asset.location.coordinate.latitude;
     entity.lng = asset.location.coordinate.longitude;
+	entity.altitude = asset.location.altitude;
     entity.title = needTitle ? [asset title] : @"";
     entity.favorite = asset.isFavorite;
     
@@ -329,12 +330,15 @@
             return;
         }
         NSData *imageData;
-        NSDate *resultData;
+        NSData *resultData;
         imageData = [result TIFFRepresentation];
         NSBitmapImageRep *imageRep = [NSBitmapImageRep imageRepWithData:imageData];
-        if (format == 1) {
+		if (format == 1)
+		{
             resultData = [imageRep representationUsingType:NSPNGFileType properties:nil];
-        } else {
+        }
+		else
+		{
             double qualityValue = (double) quality / 100.0;
             resultData = [imageRep representationUsingType:NSJPEGFileType properties:@{
                 NSImageCompressionFactor: @(qualityValue)

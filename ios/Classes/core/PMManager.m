@@ -267,6 +267,7 @@
   entity.modifiedDt = modifiedTimeStamp;
   entity.lat = asset.location.coordinate.latitude;
   entity.lng = asset.location.coordinate.longitude;
+  entity.altitude = asset.location.altitude;
   entity.title = needTitle ? [asset title] : @"";
   entity.favorite = asset.isFavorite;
 
@@ -305,40 +306,59 @@
 }
 
 - (void)fetchThumb:(PHAsset *)asset width:(NSUInteger)width height:(NSUInteger)height format:(NSUInteger)format quality:(NSUInteger)quality resultHandler:(ResultHandler *)handler {
-  PHImageManager *manager = PHImageManager.defaultManager;
-  PHImageRequestOptions *options = [PHImageRequestOptions new];
-  [options setNetworkAccessAllowed:YES];
-  [options setProgressHandler:^(double progress, NSError *error, BOOL *stop,
-          NSDictionary *info) {
-      if (progress == 1.0) {
-        [self fetchThumb:asset width:width height:height format:format quality:quality resultHandler:handler];
-      }
-  }];
-  [manager requestImageForAsset:asset
-                     targetSize:CGSizeMake(width, height)
-                    contentMode:PHImageContentModeAspectFill
-                        options:options
-                  resultHandler:^(UIImage *result, NSDictionary *info) {
-                      BOOL downloadFinished = [PMManager isDownloadFinish:info];
+	PHImageManager *manager = PHImageManager.defaultManager;
+	PHImageRequestOptions *options = [PHImageRequestOptions new];
+	[options setNetworkAccessAllowed:YES];
+	[options setProgressHandler:^(double progress, NSError *error, BOOL *stop, NSDictionary *info)
+	{
+		if (progress == 1.0)
+		{
+			[self fetchThumb:asset width:width height:height format:format quality:quality resultHandler:handler];
+		}
+	}];
 
-                      if (!downloadFinished) {
-                        return;
-                      }
+	[manager requestImageForAsset:asset
+		targetSize:CGSizeMake(width, height)
+		contentMode:PHImageContentModeAspectFill
+		options:options
+		resultHandler:^(UIImage *result, NSDictionary *info)
+		{
+			BOOL downloadFinished = [PMManager isDownloadFinish:info];
+			if (!downloadFinished)
+				return;
 
-                      if ([handler isReplied]) {
-                        return;
-                      }
-                      NSData *imageData;
-                      if (format == 1) {
-                        imageData = UIImagePNGRepresentation(result);
-                      } else {
-                        double qualityValue = (double) quality / 100.0;
-                        imageData = UIImageJPEGRepresentation(result, qualityValue);
-                      }
+			if ([handler isReplied])
+				return;
+                      
+			if (format == 2)
+			{
+				CGImageRef image = [result CGImage];
+				CFDataRef dataRef = CGDataProviderCopyData(CGImageGetDataProvider(image));
+				const unsigned char * buffer = CFDataGetBytePtr(dataRef);
 
-                      FlutterStandardTypedData *data = [FlutterStandardTypedData typedDataWithBytes:imageData];
-                      [handler reply:data];
-                  }];
+				unsigned long dataSize = width * height * 4;
+				NSData* nsData = [NSData dataWithBytes:(const void *)buffer length:dataSize];
+
+				FlutterStandardTypedData *data = [FlutterStandardTypedData typedDataWithBytes:nsData];
+				[handler reply:data];
+			}
+			else
+			{
+				NSData *imageData;
+				if (format == 1)
+				{
+					imageData = UIImagePNGRepresentation(result);
+				}
+				else
+				{
+					double qualityValue = (double) quality / 100.0;
+					imageData = UIImageJPEGRepresentation(result, qualityValue);
+				}
+
+				FlutterStandardTypedData *data = [FlutterStandardTypedData typedDataWithBytes:imageData];
+				[handler reply:data];
+			}
+		}];
 }
 
 - (void)getFullSizeFileWithId:(NSString *)id

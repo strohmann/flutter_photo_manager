@@ -34,6 +34,7 @@
 @property(nonatomic, assign) long modifiedDt;
 @property(nonatomic, assign) double lat;
 @property(nonatomic, assign) double lng;
+@property(nonatomic, assign) double altitude;
 @property(nonatomic, copy) NSString *title;
 @property(nonatomic, assign) BOOL favorite;
 

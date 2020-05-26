@@ -79,6 +79,7 @@
           @"modifiedDt": @(modifiedDt),
           @"lng": @(asset.location.coordinate.longitude),
           @"lat": @(asset.location.coordinate.latitude),
+		  @"altitude": @(asset.location.altitude),
           @"title": needTitle ? [asset title] : @"",
   };
 }
@@ -96,6 +97,7 @@
           @"modifiedDt": @(asset.modifiedDt),
           @"lng": @(asset.lng),
           @"lat": @(asset.lat),
+		  @"altitude": @(asset.altitude),
           @"title": needTitle ? asset.title : @"",
   };
 }

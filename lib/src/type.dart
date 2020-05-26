@@ -80,5 +80,4 @@ class RequestType {
   }
 }
 
-/// For generality, only support jpg and png.
-enum ThumbFormat { jpeg, png }
+enum ThumbFormat { jpeg, png, raw }

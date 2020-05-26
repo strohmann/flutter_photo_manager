@@ -274,6 +274,7 @@ class PhotoManager {
       ..typeInt = asset.typeInt
       ..longitude = asset.longitude
       ..latitude = asset.latitude
+      ..altitude = asset.altitude
       ..title = asset.title;
 
     return src;
