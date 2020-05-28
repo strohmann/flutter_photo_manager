@@ -14,6 +14,7 @@
 #import "NSString+PM_COMMON.h"
 #import "PMFolderUtils.h"
 #import "MD5Utils.h"
+#import "ImageHelper.h"
 
 @implementation PMManager {
   BOOL __isAuth;
@@ -68,10 +69,19 @@
 
   PHFetchResult<PHAssetCollection *> *smartAlbumResult = [PHAssetCollection
           fetchAssetCollectionsWithType:PHAssetCollectionTypeSmartAlbum
-                                subtype:PHAssetCollectionSubtypeAlbumRegular
+                                subtype:PHAssetCollectionSubtypeAny
                                 options:fetchCollectionOptions];
   [self injectAssetPathIntoArray:array
                           result:smartAlbumResult
+                         options:assetOptions
+                          hasAll:hasAll];
+
+	PHFetchResult<PHAssetCollection *> *regularAlbumResult = [PHAssetCollection
+          fetchAssetCollectionsWithType:PHAssetCollectionTypeAlbum
+                                subtype:PHAssetCollectionSubtypeAny
+                                options:fetchCollectionOptions];
+  [self injectAssetPathIntoArray:array
+                          result:regularAlbumResult
                          options:assetOptions
                           hasAll:hasAll];
 
@@ -309,6 +319,9 @@
 	PHImageManager *manager = PHImageManager.defaultManager;
 	PHImageRequestOptions *options = [PHImageRequestOptions new];
 	[options setNetworkAccessAllowed:YES];
+    if (width <= 128 && height <= 128) //thumbnail => deliver fast
+        [options setDeliveryMode:PHImageRequestOptionsDeliveryModeFastFormat];
+    [options setResizeMode:PHImageRequestOptionsResizeModeFast];
 	[options setProgressHandler:^(double progress, NSError *error, BOOL *stop, NSDictionary *info)
 	{
 		if (progress == 1.0)
@@ -334,10 +347,25 @@
 			{
 				CGImageRef image = [result CGImage];
 				CFDataRef dataRef = CGDataProviderCopyData(CGImageGetDataProvider(image));
-				const unsigned char * buffer = CFDataGetBytePtr(dataRef);
+				const unsigned char* buffer = CFDataGetBytePtr(dataRef);
+                long bufferLength = CFDataGetLength(dataRef);
+                
+                uint32_t widthI = (uint32_t)CGImageGetWidth(image);
+                uint32_t heightI = (uint32_t)CGImageGetHeight(image);
+                
+                NSMutableData* nsData = [NSMutableData dataWithBytes:&widthI length:sizeof(uint32_t)];
+                [nsData appendBytes:&heightI length:sizeof(uint32_t)];
 
-				unsigned long dataSize = width * height * 4;
-				NSData* nsData = [NSData dataWithBytes:(const void *)buffer length:dataSize];
+                uint32_t bpp = (uint32_t)CGImageGetBitsPerPixel(image);
+                if (bpp != 32)
+                {
+                    // Convert to BGRA_8888 before appending
+                    [ImageHelper convertToBitmapRGBA8AndAppend:image resultContainer:nsData];
+                }
+                else
+                {
+                    [nsData appendBytes:(const void *)buffer length:bufferLength];
+                }
 
 				FlutterStandardTypedData *data = [FlutterStandardTypedData typedDataWithBytes:nsData];
 				[handler reply:data];
