@@ -353,7 +353,11 @@
                 uint32_t widthI = (uint32_t)CGImageGetWidth(image);
                 uint32_t heightI = (uint32_t)CGImageGetHeight(image);
                 
-                NSMutableData* nsData = [NSMutableData dataWithBytes:&widthI length:sizeof(uint32_t)];
+                NSInteger capacity = 2 * sizeof(uint32_t) + widthI * heightI * 4;
+                NSMutableData* nsData = [[NSMutableData alloc] initWithCapacity:capacity];
+                
+//                NSMutableData* nsData = [NSMutableData dataWithBytes:&widthI length:sizeof(uint32_t)];
+                [nsData appendBytes:&widthI length:sizeof(uint32_t)];
                 [nsData appendBytes:&heightI length:sizeof(uint32_t)];
 
                 uint32_t bpp = (uint32_t)CGImageGetBitsPerPixel(image);
@@ -366,6 +370,7 @@
                 {
                     [nsData appendBytes:(const void *)buffer length:bufferLength];
                 }
+                CFRelease(dataRef);
 
 				FlutterStandardTypedData *data = [FlutterStandardTypedData typedDataWithBytes:nsData];
 				[handler reply:data];
