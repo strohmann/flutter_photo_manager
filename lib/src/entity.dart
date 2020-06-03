@@ -252,8 +252,10 @@ class AssetEntity {
     return _plugin.getLatLngAsync(this);
   }
 
-  /// if you need upload file ,then you can use the file, nullable.
-  Future<File> get file async => PhotoManager._getFileWithId(this.id);
+	/// if you need upload file ,then you can use the file, nullable.
+	Future<File> get file async => PhotoManager._getFileWithId(this.id);
+
+	Future<String> get directFilename async => PhotoManager._getFilenameWithId(this.id);
 
   /// This contains all the EXIF information, but in contrast, `Image` widget may not be able to display pictures.
   ///

@@ -144,16 +144,30 @@ class PhotoManager {
   /// see [_NotifyManager]
   static void stopChangeNotify() => _notifyManager.stopHandleNotify();
 
-  static Future<File> _getFileWithId(String id, {bool isOrigin = false}) async {
-    if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid) {
-      final path = await _plugin.getFullFile(id, isOrigin: isOrigin);
-      if (path == null) {
-        return null;
-      }
-      return File(path);
-    }
-    return null;
-  }
+	static Future<File> _getFileWithId(String id, {bool isOrigin = false}) async
+	{
+		if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid)
+		{
+			final path = await _plugin.getFullFile(id, isOrigin: isOrigin);
+			if (path == null)
+				return null;
+			return File(path);
+		}
+		return null;
+	}
+
+	static Future<String> _getFilenameWithId(String id, {bool isOrigin = false}) async
+	{
+		if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid)
+		{
+			final path = await _plugin.getFullFile(id, isOrigin: isOrigin);
+			if (path == null)
+				return null;
+			return path;
+		}
+		return null;
+	}
+
 
   static Future<Uint8List> _getFullDataWithId(String id) async {
     return _plugin.getOriginBytes(id);
