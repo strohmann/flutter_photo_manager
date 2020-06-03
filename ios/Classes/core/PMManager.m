@@ -329,19 +329,30 @@
 			[self fetchThumb:asset width:width height:height format:format quality:quality resultHandler:handler];
 		}
 	}];
-
+    
 	[manager requestImageForAsset:asset
 		targetSize:CGSizeMake(width, height)
 		contentMode:PHImageContentModeAspectFill
 		options:options
 		resultHandler:^(UIImage *result, NSDictionary *info)
 		{
+            if ([handler isReplied])
+                return;
+
 			BOOL downloadFinished = [PMManager isDownloadFinish:info];
 			if (!downloadFinished)
+            {
+                if (info[PHImageErrorKey])
+                {
+                    NSMutableData* nsData = [[NSMutableData alloc] init];
+                    int32_t errorCode = -1;
+                    [nsData appendBytes:&errorCode length:sizeof(int32_t)];
+                    
+                    FlutterStandardTypedData *data = [FlutterStandardTypedData typedDataWithBytes:nsData];
+                    [handler reply:data];
+                }
 				return;
-
-			if ([handler isReplied])
-				return;
+            }
                       
 			if (format == 2)
 			{
