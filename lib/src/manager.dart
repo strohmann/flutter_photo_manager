@@ -155,6 +155,13 @@ class PhotoManager {
     return null;
   }
 
+  static Future<String> _getPathWithId(String id, {bool isOrigin = false}) async {
+    if (Platform.isIOS || Platform.isAndroid) {
+      return await _plugin.getFullFile(id, isOrigin: isOrigin);
+    }
+    return null;
+  }
+
   static Future<Uint8List> _getFullDataWithId(String id) async {
     return _plugin.getOriginBytes(id);
   }
