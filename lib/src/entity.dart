@@ -2,6 +2,16 @@ part of '../photo_manager.dart';
 
 /// asset entity, for entity info.
 class AssetPathEntity {
+  static Future<AssetPathEntity> fromId(String id,
+      {FilterOptionGroup filterOption}) async {
+    filterOption ??= FilterOptionGroup();
+    var entity = AssetPathEntity(id: id, filterOption: filterOption);
+    entity.type = RequestType.common;
+    entity.albumType = 1;
+    await entity.refreshPathProperties();
+    return entity;
+  }
+
   /// id
   ///
   /// in ios is localIdentifier
@@ -63,6 +73,7 @@ class AssetPathEntity {
       this.assetCount = result.assetCount;
       this.name = result.name;
       this.filterOption.dateTimeCond = dateTimeCond;
+      this.isAll = result.isAll;
     }
   }
 
@@ -95,7 +106,7 @@ class AssetPathEntity {
 
   /// In android, always return empty list.
   Future<List<AssetPathEntity>> getSubPathList() async {
-    if (!Platform.isIOS) {
+    if (!(Platform.isIOS || Platform.isMacOS)) {
       return [];
     }
     return PhotoManager._getSubPath(this);
@@ -225,6 +236,13 @@ class AssetEntity {
     _longitude = longitude;
   }
 
+  double _altitude;
+  double get altitude => _altitude ?? 0;
+  set altitude(double altitude)
+  {
+    _altitude = altitude;
+  }
+
   /// Get latitude and longitude from MediaStore(android) / Photos(iOS).
   ///
   /// except : In androidQ, the location info come from exif.
@@ -234,8 +252,10 @@ class AssetEntity {
     return _plugin.getLatLngAsync(this);
   }
 
-  /// if you need upload file ,then you can use the file, nullable.
-  Future<File> get file async => PhotoManager._getFileWithId(this.id);
+	/// if you need upload file ,then you can use the file, nullable.
+	Future<File> get file async => PhotoManager._getFileWithId(this.id);
+
+	Future<String> get directFilename async => PhotoManager._getFilenameWithId(this.id);
 
   Future<String> get path async => PhotoManager._getPathWithId(this.id);
 
@@ -268,9 +288,9 @@ class AssetEntity {
     ThumbFormat format = ThumbFormat.jpeg,
     int quality = 100,
   }) {
-    assert(width > 0 && height > 0, "The width and height must better 0.");
-    assert(format != null, "The format must not be null.");
-    assert(quality > 0 && quality <= 100, "The qulity must between 0 and 100");
+    assert(width > 0 && height > 0, "The width and height must > 0");
+    assert(format != null, "The format must not be null");
+    assert(quality > 0 && quality <= 100, "The quality must be between 0 and 100");
     return PhotoManager._getThumbDataWithId(
       id,
       width: width,

@@ -1,12 +1,19 @@
 # CHANGELOG
 
-## 0.5.1-dev.8
+## 0.5.2
+
+Support MacOS
+
+From the version, Starting from this version, 1.9 or earlier versions are not supported.
+
+## 0.5.1
 
 Feature:
 
 - Save image asset with file path.
 - Copy asset to another album.
 - Create AssetEntity with id.
+- Create AssetPathEntity from id.
 - Only iOS
   - Create folder or album.
   - Remove assets in album.
@@ -23,6 +30,7 @@ Fix:
 - Open setting in iOS.
 - Edited asset in iOS.
 - Audio properties of FilterOption.
+- Android onlyAll assetCount bug.
 
 Change:
 

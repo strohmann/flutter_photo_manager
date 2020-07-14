@@ -42,6 +42,7 @@ class ConvertUtils {
         ..typeInt = item["type"]
         ..longitude = item["lng"]
         ..latitude = item["lat"]
+        ..altitude = item["altitude"]
         ..title = item["title"]
         ..relativePath = item['relativePath'];
 
@@ -72,6 +73,7 @@ class ConvertUtils {
       ..typeInt = data["type"]
       ..longitude = data["lng"]
       ..latitude = data["lat"]
+      ..altitude = data["altitude"]
       ..title = data["title"];
 
     return entity;

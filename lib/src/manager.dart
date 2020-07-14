@@ -144,16 +144,30 @@ class PhotoManager {
   /// see [_NotifyManager]
   static void stopChangeNotify() => _notifyManager.stopHandleNotify();
 
-  static Future<File> _getFileWithId(String id, {bool isOrigin = false}) async {
-    if (Platform.isIOS || Platform.isAndroid) {
-      final path = await _plugin.getFullFile(id, isOrigin: isOrigin);
-      if (path == null) {
-        return null;
-      }
-      return File(path);
-    }
-    return null;
-  }
+	static Future<File> _getFileWithId(String id, {bool isOrigin = false}) async
+	{
+		if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid)
+		{
+			final path = await _plugin.getFullFile(id, isOrigin: isOrigin);
+			if (path == null)
+				return null;
+			return File(path);
+		}
+		return null;
+	}
+
+	static Future<String> _getFilenameWithId(String id, {bool isOrigin = false}) async
+	{
+		if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid)
+		{
+			final path = await _plugin.getFullFile(id, isOrigin: isOrigin);
+			if (path == null)
+				return null;
+			return path;
+		}
+		return null;
+	}
+
 
   static Future<String> _getPathWithId(String id, {bool isOrigin = false}) async {
     if (Platform.isIOS || Platform.isAndroid) {
@@ -233,14 +247,14 @@ class PhotoManager {
       _plugin.cacheOriginBytes(cache);
 
   static Future<Uint8List> _getOriginBytes(AssetEntity assetEntity) async {
-    assert(Platform.isAndroid || Platform.isIOS);
+    assert(Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
     if (Platform.isAndroid) {
       if (await _isAndroidQ()) {
         return _plugin.getOriginBytes(assetEntity.id);
       } else {
         return (await assetEntity.originFile).readAsBytes();
       }
-    } else if (Platform.isIOS) {
+    } else if (Platform.isIOS || Platform.isMacOS) {
       final file = await assetEntity.originFile;
       return file.readAsBytes();
     }
@@ -248,13 +262,13 @@ class PhotoManager {
   }
 
   static Future<String> _getMediaUrl(AssetEntity assetEntity) {
-    assert(Platform.isAndroid || Platform.isIOS);
+    assert(Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
     return _plugin.getMediaUrl(assetEntity);
   }
 
   static Future<List<AssetPathEntity>> _getSubPath(
       AssetPathEntity assetPathEntity) {
-    assert(Platform.isIOS);
+    assert(Platform.isIOS || Platform.isMacOS);
     return _plugin.getSubPathEntities(assetPathEntity);
   }
 
@@ -265,7 +279,7 @@ class PhotoManager {
 
     final asset = ConvertUtils.convertToAsset(map);
 
-    print(asset);
+    //print(asset);
 
     if (asset == null) {
       return null;
@@ -281,6 +295,7 @@ class PhotoManager {
       ..typeInt = asset.typeInt
       ..longitude = asset.longitude
       ..latitude = asset.latitude
+      ..altitude = asset.altitude
       ..title = asset.title;
 
     return src;

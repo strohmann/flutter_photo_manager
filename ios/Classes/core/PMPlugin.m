@@ -237,7 +237,8 @@
           [handler reply:nil];
           return;
         }
-        NSDictionary *resultMap = [ConvertUtils convertPMAssetToMap:entity needTitle:YES];
+        //NSDictionary *resultMap = [ConvertUtils convertPMAssetToMap:entity needTitle:YES];
+		NSDictionary *resultMap = [ConvertUtils convertPMAssetToMap:entity needTitle:NO];
         [handler reply:@{@"data": resultMap}];
       } else if ([@"getSubPath" isEqualToString:call.method]) {
         NSString *galleryId = call.arguments[@"id"];

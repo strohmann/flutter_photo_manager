@@ -14,6 +14,7 @@
 #import "NSString+PM_COMMON.h"
 #import "PMFolderUtils.h"
 #import "MD5Utils.h"
+#import "ImageHelper.h"
 
 @implementation PMManager {
   BOOL __isAuth;
@@ -68,10 +69,19 @@
 
   PHFetchResult<PHAssetCollection *> *smartAlbumResult = [PHAssetCollection
           fetchAssetCollectionsWithType:PHAssetCollectionTypeSmartAlbum
-                                subtype:PHAssetCollectionSubtypeAlbumRegular
+                                subtype:PHAssetCollectionSubtypeAny
                                 options:fetchCollectionOptions];
   [self injectAssetPathIntoArray:array
                           result:smartAlbumResult
+                         options:assetOptions
+                          hasAll:hasAll];
+
+	PHFetchResult<PHAssetCollection *> *regularAlbumResult = [PHAssetCollection
+          fetchAssetCollectionsWithType:PHAssetCollectionTypeAlbum
+                                subtype:PHAssetCollectionSubtypeAny
+                                options:fetchCollectionOptions];
+  [self injectAssetPathIntoArray:array
+                          result:regularAlbumResult
                          options:assetOptions
                           hasAll:hasAll];
 
@@ -267,6 +277,7 @@
   entity.modifiedDt = modifiedTimeStamp;
   entity.lat = asset.location.coordinate.latitude;
   entity.lng = asset.location.coordinate.longitude;
+  entity.altitude = asset.location.altitude;
   entity.title = needTitle ? [asset title] : @"";
   entity.favorite = asset.isFavorite;
 
@@ -305,40 +316,93 @@
 }
 
 - (void)fetchThumb:(PHAsset *)asset width:(NSUInteger)width height:(NSUInteger)height format:(NSUInteger)format quality:(NSUInteger)quality resultHandler:(ResultHandler *)handler {
-  PHImageManager *manager = PHImageManager.defaultManager;
-  PHImageRequestOptions *options = [PHImageRequestOptions new];
-  [options setNetworkAccessAllowed:YES];
-  [options setProgressHandler:^(double progress, NSError *error, BOOL *stop,
-          NSDictionary *info) {
-      if (progress == 1.0) {
-        [self fetchThumb:asset width:width height:height format:format quality:quality resultHandler:handler];
-      }
-  }];
-  [manager requestImageForAsset:asset
-                     targetSize:CGSizeMake(width, height)
-                    contentMode:PHImageContentModeAspectFill
-                        options:options
-                  resultHandler:^(UIImage *result, NSDictionary *info) {
-                      BOOL downloadFinished = [PMManager isDownloadFinish:info];
+	PHImageManager *manager = PHImageManager.defaultManager;
+	PHImageRequestOptions *options = [PHImageRequestOptions new];
+	[options setNetworkAccessAllowed:YES];
+    if (width <= 128 && height <= 128) //thumbnail => deliver fast
+        [options setDeliveryMode:PHImageRequestOptionsDeliveryModeFastFormat];
+    [options setResizeMode:PHImageRequestOptionsResizeModeFast];
+	[options setProgressHandler:^(double progress, NSError *error, BOOL *stop, NSDictionary *info)
+	{
+		if (progress == 1.0)
+		{
+			[self fetchThumb:asset width:width height:height format:format quality:quality resultHandler:handler];
+		}
+	}];
+    
+	[manager requestImageForAsset:asset
+		targetSize:CGSizeMake(width, height)
+		contentMode:PHImageContentModeAspectFill
+		options:options
+		resultHandler:^(UIImage *result, NSDictionary *info)
+		{
+            if ([handler isReplied])
+                return;
 
-                      if (!downloadFinished) {
-                        return;
-                      }
+			BOOL downloadFinished = [PMManager isDownloadFinish:info];
+			if (!downloadFinished)
+            {
+                if (info[PHImageErrorKey])
+                {
+                    NSMutableData* nsData = [[NSMutableData alloc] init];
+                    int32_t errorCode = -1;
+                    [nsData appendBytes:&errorCode length:sizeof(int32_t)];
+                    
+                    FlutterStandardTypedData *data = [FlutterStandardTypedData typedDataWithBytes:nsData];
+                    [handler reply:data];
+                }
+				return;
+            }
+                      
+			if (format == 2)
+			{
+				CGImageRef image = [result CGImage];
+				CFDataRef dataRef = CGDataProviderCopyData(CGImageGetDataProvider(image));
+				const unsigned char* buffer = CFDataGetBytePtr(dataRef);
+                long bufferLength = CFDataGetLength(dataRef);
+                
+                uint32_t widthI = (uint32_t)CGImageGetWidth(image);
+                uint32_t heightI = (uint32_t)CGImageGetHeight(image);
+                
+                NSInteger capacity = 2 * sizeof(uint32_t) + widthI * heightI * 4;
+                NSMutableData* nsData = [[NSMutableData alloc] initWithCapacity:capacity];
+                
+//                NSMutableData* nsData = [NSMutableData dataWithBytes:&widthI length:sizeof(uint32_t)];
+                [nsData appendBytes:&widthI length:sizeof(uint32_t)];
+                [nsData appendBytes:&heightI length:sizeof(uint32_t)];
 
-                      if ([handler isReplied]) {
-                        return;
-                      }
-                      NSData *imageData;
-                      if (format == 1) {
-                        imageData = UIImagePNGRepresentation(result);
-                      } else {
-                        double qualityValue = (double) quality / 100.0;
-                        imageData = UIImageJPEGRepresentation(result, qualityValue);
-                      }
+                uint32_t bpp = (uint32_t)CGImageGetBitsPerPixel(image);
+                if (bpp != 32)
+                {
+                    // Convert to BGRA_8888 before appending
+                    [ImageHelper convertToBitmapRGBA8AndAppend:image resultContainer:nsData];
+                }
+                else
+                {
+                    [nsData appendBytes:(const void *)buffer length:bufferLength];
+                }
+                CFRelease(dataRef);
 
-                      FlutterStandardTypedData *data = [FlutterStandardTypedData typedDataWithBytes:imageData];
-                      [handler reply:data];
-                  }];
+				FlutterStandardTypedData *data = [FlutterStandardTypedData typedDataWithBytes:nsData];
+				[handler reply:data];
+			}
+			else
+			{
+				NSData *imageData;
+				if (format == 1)
+				{
+					imageData = UIImagePNGRepresentation(result);
+				}
+				else
+				{
+					double qualityValue = (double) quality / 100.0;
+					imageData = UIImageJPEGRepresentation(result, qualityValue);
+				}
+
+				FlutterStandardTypedData *data = [FlutterStandardTypedData typedDataWithBytes:imageData];
+				[handler reply:data];
+			}
+		}];
 }
 
 - (void)getFullSizeFileWithId:(NSString *)id
