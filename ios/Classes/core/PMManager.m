@@ -786,10 +786,14 @@
   NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
   if ([[UIApplication sharedApplication] canOpenURL:url]) {
     if ([UIDevice currentDevice].systemVersion.floatValue >= 10.0) {
-      [[UIApplication sharedApplication] openURL:url
-                                         options:@{}
-                               completionHandler:^(BOOL success) {
-                               }];
+        if (@available(iOS 10.0, *)) {
+            [[UIApplication sharedApplication] openURL:url
+                                               options:@{}
+                                     completionHandler:^(BOOL success) {
+            }];
+        } else {
+            //TODO: Fallback on earlier versions
+        }
     } else {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
