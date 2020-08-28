@@ -9,6 +9,7 @@ class FilterOptionGroup {
   /// A empty option
   FilterOptionGroup.empty();
 
+  // ignore: sort_unnamed_constructors_first
   FilterOptionGroup() {
     setOption(AssetType.image, FilterOption());
     setOption(AssetType.video, FilterOption());
@@ -127,7 +128,9 @@ class DateTimeCond {
   final bool asc;
 
   const DateTimeCond({
+    // ignore: always_require_non_null_named_parameters
     this.min,
+    // ignore: always_require_non_null_named_parameters
     this.max,
     this.asc = false, // default desc
   })  : assert(min != null),

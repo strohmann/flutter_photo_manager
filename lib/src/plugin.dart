@@ -11,6 +11,7 @@ class Plugin with BasePlugin, IosPlugin, AndroidPlugin {
   static Plugin _plugin;
 
   factory Plugin() {
+    // ignore: join_return_with_assignment
     _plugin ??= Plugin._();
     return _plugin;
   }

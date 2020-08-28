@@ -13,6 +13,7 @@ import 'src/plugin.dart';
 import 'src/type.dart';
 
 export 'src/plugin.dart';
+// ignore: directives_ordering
 export 'src/filter/filter_options.dart';
 export 'src/type.dart';
 
